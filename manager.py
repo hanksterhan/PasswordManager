@@ -67,10 +67,10 @@ def verify_password(password):
 def create_master_password():
     """ Logic to prompt users to create master password
     """ 
-    #TODO: how to deal with master password
-    mpassword = input("Please enter a strong password: ")
-    while not password_strength(mpassword):
-        mpassword = input("Please enter a strong password: ")
+    # #TODO: how to deal with master password
+    # mpassword = input("Please enter a strong password: ")
+    # while not password_strength(mpassword):
+    #     mpassword = input("Please enter a strong password: ")
     # hash the pasword
     hash = hash_password(mpassword)
 
@@ -79,6 +79,10 @@ def create_master_password():
 
     # save to file
     passwords.to_csv("passwords.txt", header=False)
+
+    # create and save account/url dataframe
+    metadata = pd.DataFrame({"Account Name": [], "url": []})
+    metadata.to_csv("accounts.txt")
 
 def generate_password():
     """ Generates a password of length 16 using cryptographic grade random bits. Must have a password strength over 0.75
@@ -93,7 +97,7 @@ def generate_password():
         pw = str().join(myrg.choice(alphabet) for _ in range(length))
     return(pw)
 
-def encrypt_password():
+def store_password():
     """ Generates a password key using 32 byte random salt and 500,000 rounds of stretching and encrypts the generated password
         Stores the password into the corresponding row in the dataframe
         output: nothing
@@ -112,7 +116,7 @@ def encrypt_password():
     newpwd = pd.DataFrame({"password":[b64encode(salt+epw)]})
     newpwd.to_csv('passwords.txt', mode='a', header=False)
 
-def decrypt_password(row):
+def retrieve_password(row):
     """ Given the row that the salt|encrypted_password is on, decrypt it
         input: row (int) 0-based index that starts after the hashed master password
         output: nothing
@@ -131,9 +135,40 @@ def decrypt_password(row):
     print("Password Copied to Clipboard")
 
 
-def add_entry():
-    encrypt_password()
-    decrypt_password(0)
+def add_entry(account='', url=''):
+    """ Given an account name or url, create an entry in the dataframes and copy the password to the clipboard
+        input: account (str) [optional] account name if applicable
+               url (str) [optional] url of the account if applicable
+        output: nothing
+    """
+    # add metadata to the dataframes
+    metadata = pd.DataFrame({"Account Name":[account], "url":[url]})
+    metadata.to_csv('accounts.txt', mode='a', header=False)
+
+    # add password to the password dataframe
+    store_password()
+
+def search_entry(account='', url=''):
+    """ Given an account name or url, search the metadata dataframe to find the corresponding row entry 
+        input: account (str) [optional] account name if applicable
+               url (str) [optional] url of the account if applicable
+        output: nothing
+    """
+    # TODO: can make searches much more flexible than they are. ex: case insensitive account name, url only cares about what is after the www
+    metadata = pd.read_csv('accounts.txt', index_col=0).reset_index()
+    if account is not '':
+        rowindex = metadata.index[metadata['Account Name'] == account].tolist()[0]
+    elif url is not '':
+        rowindex = metadata.index[metadata['url'] == url].tolist()[0]
+    else:
+        # TODO: what to do when account name nor url is found?
+        print("Account entry not found. Please try again")
+        sys.exit(2)
+    retrieve_password(rowindex)
+
 # create_master_password()
 
-add_entry()
+# add_entry(account='Facebook', url='www.facebook.com')
+# add_entry(account='Gmail', url='www.gmail.com')
+# add_entry(account='Twitter', url='www.twitter.com')
+search_entry(account='Twitter')
