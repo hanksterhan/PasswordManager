@@ -7,6 +7,12 @@ import sys, getopt, random, string
 import passwordmeter
 from passlib.hash import pbkdf2_sha256
 import pandas as pd
+from Crypto.Protocol.KDF import PBKDF2
+from Crypto.Random import get_random_bytes
+from Crypto.Util.strxor import strxor
+import pyperclip
+from base64 import b64encode, b64decode
+
 
 try:
     opts, args = getopt.getopt(sys.argv[1:],'hp:')
@@ -60,7 +66,8 @@ def verify_password(password):
 
 def create_master_password():
     """ Logic to prompt users to create master password
-    """
+    """ 
+    #TODO: how to deal with master password
     mpassword = input("Please enter a strong password: ")
     while not password_strength(mpassword):
         mpassword = input("Please enter a strong password: ")
@@ -71,7 +78,7 @@ def create_master_password():
     passwords = pd.DataFrame({"password":[hash]})
 
     # save to file
-    passwords.to_csv("passwords.txt")
+    passwords.to_csv("passwords.txt", header=False)
 
 def generate_password():
     """ Generates a password of length 16 using cryptographic grade random bits. Must have a password strength over 0.75
@@ -86,5 +93,47 @@ def generate_password():
         pw = str().join(myrg.choice(alphabet) for _ in range(length))
     return(pw)
 
+def encrypt_password():
+    """ Generates a password key using 32 byte random salt and 500,000 rounds of stretching and encrypts the generated password
+        Stores the password into the corresponding row in the dataframe
+        output: nothing
+    """
+    # TODO: how to access masterpassword?
+    salt = get_random_bytes(32)
+    pwdkey = PBKDF2(mpassword, salt, count=500000)
+    pw = generate_password().encode('utf-8')
+    epw = strxor(pw, pwdkey)
+
+    # copy generated password to clipboard
+    pyperclip.copy(pw.decode('utf-8'))
+    print("Password Copied to Clipboard")
+
+    # save encrypted password to file
+    newpwd = pd.DataFrame({"password":[b64encode(salt+epw)]})
+    newpwd.to_csv('passwords.txt', mode='a', header=False)
+
+def decrypt_password(row):
+    """ Given the row that the salt|encrypted_password is on, decrypt it
+        input: row (int) 0-based index that starts after the hashed master password
+        output: nothing
+    """
+    # read in the encrypted password
+    salt_epw = pd.read_csv("passwords.txt", skiprows=row, nrows=1).iat[0,1]
+    salt_epw = b64decode(salt_epw[2:-1])
+    salt = salt_epw[:32]
+    epw = salt_epw[32:]
+
+    pwdkey = PBKDF2(mpassword, salt, count=500000)
+    pw = strxor(epw, pwdkey)
+
+    # copy generated password to clipboard
+    pyperclip.copy(pw.decode('utf-8'))
+    print("Password Copied to Clipboard")
+
+
+def add_entry():
+    encrypt_password()
+    decrypt_password(0)
 # create_master_password()
-# generate_password()
+
+add_entry()
