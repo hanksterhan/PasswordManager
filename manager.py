@@ -3,7 +3,7 @@
 """ Command line interface for password manager
 """
 
-import sys, getopt
+import sys, getopt, random, string
 import passwordmeter
 from passlib.hash import pbkdf2_sha256
 import pandas as pd
@@ -73,4 +73,18 @@ def create_master_password():
     # save to file
     passwords.to_csv("passwords.txt")
 
-create_master_password()
+def generate_password():
+    """ Generates a password of length 16 using cryptographic grade random bits. Must have a password strength over 0.75
+        output: randomly generated password
+    """
+    myrg = random.SystemRandom()
+    length = 16
+    alphabet = string.ascii_letters + string.digits + '!'+'@'+'#'+'$'+'%'+'^'+'&'+'*'+'('+')'
+
+    pw = str().join(myrg.choice(alphabet) for _ in range(length))
+    while not password_strength(pw):
+        pw = str().join(myrg.choice(alphabet) for _ in range(length))
+    return(pw)
+
+# create_master_password()
+# generate_password()
