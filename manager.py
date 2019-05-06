@@ -184,7 +184,12 @@ def main():
         action = int(input("What would you like to do? \n1 - print accounts \n2 - retrieve account password \n3 - add account\n4 - exit\n"))
         if action is 1: 
             # print accounts
-            print("print accounts")
+            metadata = pd.read_csv('accounts.txt', index_col=0).reset_index(drop=True)
+            print()
+            print(metadata)
+            del metadata
+            print()
+
         elif action is 2:
             # retrieve account password
             print("retrieve account password")
