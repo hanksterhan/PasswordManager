@@ -3,7 +3,7 @@
 """ Command line interface for password manager
 """
 
-import sys, getopt, random, string
+import sys, getopt, random, string, os.path
 import passwordmeter
 from passlib.hash import pbkdf2_sha256
 import pandas as pd
@@ -14,36 +14,24 @@ import pyperclip
 from base64 import b64encode, b64decode
 
 
-try:
-    opts, args = getopt.getopt(sys.argv[1:],'hp:')
-except getopt.GetoptError:
-    print("Usage: manager.py -p <password>")
-    sys.exit(2)
 
-mpassword = ''
-
-for opt, arg in opts:
-    if opt == '-h':
-        print("Usage: manager.py -p <password>")
-        sys.exit()
-    elif opt == '-p':
-        mpassword = arg
-
-def password_strength(password):
+def password_strength(password, verboseFlag=0):
     """ Given a password as a string, calculate the password strength using the library passwordmeter and return True if the password is strong enough
-        input: password (str)
+        input: password (str), verboseFlag (int) default to 0 no printing, 1 to print
         output: True if the password is strong enough, False o.w.
     """
     strength, improvements = passwordmeter.test(password)
     if strength < 0.75:
-        print("Your password is too weak, password strength: ", strength)
-        print("Possible improvements:")
-        for suggestion in improvements.values():
-            print(" - ", suggestion)
-        print() 
+        if verboseFlag:
+            print("Your password is too weak, password strength: ", strength)
+            print("Possible improvements:")
+            for suggestion in improvements.values():
+                print(" - ", suggestion)
+            print() 
         return False
     else: 
-        print("Your password is strong! Password strength: ", strength)
+        if verboseFlag:
+            print("Your password is strong! Password strength: ", strength)
         return True
 
 def hash_password(password):
@@ -67,10 +55,9 @@ def verify_password(password):
 def create_master_password():
     """ Logic to prompt users to create master password
     """ 
-    # #TODO: how to deal with master password
-    # mpassword = input("Please enter a strong password: ")
-    # while not password_strength(mpassword):
-    #     mpassword = input("Please enter a strong password: ")
+    mpassword = input("Please enter a strong password: ")
+    while not password_strength(mpassword, 1):
+        mpassword = input("Please enter a strong password: ")
     # hash the pasword
     hash = hash_password(mpassword)
 
@@ -97,14 +84,15 @@ def generate_password():
         pw = str().join(myrg.choice(alphabet) for _ in range(length))
     return(pw)
 
-def store_password():
+def store_password(mpassword):
     """ Generates a password key using 32 byte random salt and 500,000 rounds of stretching and encrypts the generated password
         Stores the password into the corresponding row in the dataframe
+        input: mpassword (str)
         output: nothing
     """
-    # TODO: how to access masterpassword?
     salt = get_random_bytes(32)
     pwdkey = PBKDF2(mpassword, salt, count=500000)
+    del mpassword
     pw = generate_password().encode('utf-8')
     epw = strxor(pw, pwdkey)
 
@@ -116,9 +104,10 @@ def store_password():
     newpwd = pd.DataFrame({"password":[b64encode(salt+epw)]})
     newpwd.to_csv('passwords.txt', mode='a', header=False)
 
-def retrieve_password(row):
+def retrieve_password(mpassword, row):
     """ Given the row that the salt|encrypted_password is on, decrypt it
         input: row (int) 0-based index that starts after the hashed master password
+                mpassword (str)
         output: nothing
     """
     # read in the encrypted password
@@ -128,6 +117,8 @@ def retrieve_password(row):
     epw = salt_epw[32:]
 
     pwdkey = PBKDF2(mpassword, salt, count=500000)
+    del mpassword
+    
     pw = strxor(epw, pwdkey)
 
     # copy generated password to clipboard
@@ -135,9 +126,10 @@ def retrieve_password(row):
     print("Password Copied to Clipboard")
 
 
-def add_entry(account='', url=''):
+def add_entry(mpassword, account='', url=''):
     """ Given an account name or url, create an entry in the dataframes and copy the password to the clipboard
-        input: account (str) [optional] account name if applicable
+        input: mpassword (str)
+               account (str) [optional] account name if applicable
                url (str) [optional] url of the account if applicable
         output: nothing
     """
@@ -146,11 +138,12 @@ def add_entry(account='', url=''):
     metadata.to_csv('accounts.txt', mode='a', header=False)
 
     # add password to the password dataframe
-    store_password()
+    store_password(mpassword)
 
-def search_entry(account='', url=''):
+def search_entry(mpassword, account='', url=''):
     """ Given an account name or url, search the metadata dataframe to find the corresponding row entry 
-        input: account (str) [optional] account name if applicable
+        input: mpassword (str)
+               account (str) [optional] account name if applicable
                url (str) [optional] url of the account if applicable
         output: nothing
     """
@@ -164,11 +157,52 @@ def search_entry(account='', url=''):
         # TODO: what to do when account name nor url is found?
         print("Account entry not found. Please try again")
         sys.exit(2)
-    retrieve_password(rowindex)
+    retrieve_password(mpassword, rowindex)
 
-# create_master_password()
+def main():
+    # check if the passwords file exists, it will exist if a master password has been established
+    if not os.path.isfile('passwords.txt'): 
+        create_master_password()
 
-# add_entry(account='Facebook', url='www.facebook.com')
-# add_entry(account='Gmail', url='www.gmail.com')
-# add_entry(account='Twitter', url='www.twitter.com')
-search_entry(account='Twitter')
+    # master password exists:
+    else:
+        try:
+            opts, args = getopt.getopt(sys.argv[1:],'hp:')
+        except getopt.GetoptError:
+            print("Usage:  python3 manager.py -p <password> or\n\tpython3 manager.py to create a master password")
+            sys.exit(2)
+
+        mpassword = ''
+
+        for opt, arg in opts:
+            if opt == '-h':
+                print("Usage:  python3 manager.py -p <password> or\n\tpython3 manager.py to create a master password")
+                sys.exit()
+            elif opt == '-p':
+                mpassword = arg
+    while True:
+        action = int(input("What would you like to do? \n1 - print accounts \n2 - retrieve account password \n3 - add account\n4 - exit\n"))
+        if action is 1: 
+            # print accounts
+            print("print accounts")
+        elif action is 2:
+            # retrieve account password
+            print("retrieve account password")
+        elif action is 3:
+            # add account
+            print("add account")
+        elif action is 4:
+            # exit
+            print("exit")
+            sys.exit(2)
+        else: 
+            # invalid option
+            print("Please choose a valid option between 1, 2, and 3")
+            sys.exit(2)
+
+    # add_entry(mpassword, account='Facebook', url='www.facebook.com')
+    # add_entry(mpassword, account='Gmail', url='www.gmail.com')
+    # add_entry(mpassword, account='Twitter', url='www.twitter.com')
+    # search_entry(mpassword, account='Twitter')
+
+main()
