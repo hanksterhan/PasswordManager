@@ -123,7 +123,7 @@ def retrieve_password(mpassword, row):
 
     # copy generated password to clipboard
     pyperclip.copy(pw.decode('utf-8'))
-    print("Password Copied to Clipboard")
+    print("\nPassword Copied to Clipboard! \n")
 
 
 def add_entry(mpassword, account='', url=''):
@@ -182,20 +182,35 @@ def main():
                 mpassword = arg
     while True:
         action = int(input("What would you like to do? \n1 - print accounts \n2 - retrieve account password \n3 - add account\n4 - exit\n"))
+
+        # print accounts
         if action is 1: 
-            # print accounts
             metadata = pd.read_csv('accounts.txt', index_col=0).reset_index(drop=True)
             print()
             print(metadata)
             del metadata
             print()
 
+        # retrieve account password
         elif action is 2:
-            # retrieve account password
-            print("retrieve account password")
+            print("You have chosen to retrieve account information.\nPlease enter either an account name or url, or both.")
+            account = input("Enter account name or press enter to enter url: ")
+            url = input("Enter account url or press enter to proceed: ")
+            if account == '' and url == '':
+                print("Please enter either an account name or url, or both, to search an account entry.\n")
+            else:
+                search_entry(mpassword, account=account, url=url)
+
+        # add account
         elif action is 3:
-            # add account
-            print("add account")
+            print("You have chosen to enter new account information.\nPlease enter either an account name or url, or both.")
+            account = input("Enter account name or press enter to enter url: ")
+            url = input("Enter account url or press enter to proceed: ")
+            if account == '' and url == '':
+                print("Please enter either an account name or url, or both, to create a new account entry.\n")
+            else:
+                add_entry(mpassword, account=account, url=url)
+                
         elif action is 4:
             # exit
             print("exit")
