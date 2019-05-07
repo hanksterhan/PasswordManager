@@ -172,20 +172,47 @@ def main():
     # master password exists:
     else:
         try:
-            opts, args = getopt.getopt(sys.argv[1:],'hp:')
+            opts, args = getopt.getopt(sys.argv[1:],'hdp:')
         except getopt.GetoptError:
-            print("Usage:  python3 manager.py -p <password> or\n\tpython3 manager.py to create a master password")
+            print("Usage:  python3 manager.py -p <password> or\n\tpython3 manager.py -d to delete database of passwords\n\tpython3 manager.py to create a master password")
             sys.exit(2)
 
         mpassword = ''
+        deleteFlag = False
 
         for opt, arg in opts:
             if opt == '-h':
-                print("Usage:  python3 manager.py -p <password> or\n\tpython3 manager.py to create a master password")
+                print("Usage:  python3 manager.py -p <password> or\n\tpython3 manager.py -d to delete database of passwords\n\tpython3 manager.py to create a master password")
                 sys.exit()
             elif opt == '-p':
                 mpassword = arg
-        print("mpassword", mpassword)
+            elif opt == '-d':
+                deleteFlag = True
+
+    if deleteFlag:
+        decision = input("Are you sure you want to delete your password database? WARNING: This is permanent!\nEnter 1 to delete:\nEnter anything else to exit:")
+        if decision is 1:
+            decision2 = input("Are you sure you want to delete your password database? WARNING: This is permanent!\nEnter 9 to delete:\nEnter anything else to exit:")
+            if decision2 is 2:
+                os.remove('accounts.txt')
+                os.remove('passwords.txt')
+                print("Password database deleted.")
+            else: 
+                print("Safely exited.")
+                sys.exit(2)
+        else:
+            print("Safely exited.")
+            sys.exit(2)
+
+    if mpassword == '':
+        print("Usage:  python3 manager.py -p <password> or\n\tpython3 manager.py -d to delete database of passwords\n\tpython3 manager.py to create a master password")
+        sys.exit(2)
+
+    # Verify master password
+    if not verify_password(mpassword):
+        print("Password incorrect.")
+        sys.exit(2)
+
     while True:
         action = int(input("What would you like to do? \n1 - print accounts \n2 - retrieve account password \n3 - add account\n4 - exit\n"))
 
