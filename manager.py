@@ -68,7 +68,7 @@ def create_master_password():
     passwords = pd.DataFrame({"password":[hash]})
 
     # save to file
-    passwords.to_csv("passwords.txt", header=False)
+    passwords.to_csv("passwords.txt")
 
     # create and save account/url dataframe
     metadata = pd.DataFrame({"Account Name": [], "url": []})
@@ -101,7 +101,7 @@ def store_password(mpassword):
 
     # copy generated password to clipboard
     pyperclip.copy(pw.decode('utf-8'))
-    print("Password Copied to Clipboard")
+    print("\nPassword Copied to Clipboard\n")
 
     # save encrypted password to file
     newpwd = pd.DataFrame({"password":[b64encode(salt+epw)]})
@@ -137,7 +137,7 @@ def add_entry(mpassword, account='', url=''):
         output: nothing
     """
     # add metadata to the dataframes
-    metadata = pd.DataFrame({"Account Name":[account], "url":[url]})
+    metadata = pd.DataFrame({"Account Name":[account.lower()], "url":[url.lower()]})
     metadata.to_csv('accounts.txt', mode='a', header=False)
 
     # add password to the password dataframe
@@ -150,17 +150,23 @@ def search_entry(mpassword, account='', url=''):
                url (str) [optional] url of the account if applicable
         output: nothing
     """
-    # TODO: can make searches much more flexible than they are. ex: case insensitive account name, url only cares about what is after the www
     metadata = pd.read_csv('accounts.txt', index_col=0).reset_index()
     if account is not '':
-        rowindex = metadata.index[metadata['Account Name'] == account].tolist()[0]
+        try:
+            rowindex = metadata.index[metadata['Account Name'] == account.lower()].tolist()[0]
+        except IndexError:
+            print("\nAccount not found.\n")
+            return
     elif url is not '':
-        rowindex = metadata.index[metadata['url'] == url].tolist()[0]
+        try:
+            rowindex = metadata.index[metadata['url'] == url.lower()].tolist()[0]
+        except IndexError:
+            print("\nurl not found.\n")
+            return
     else:
-        # TODO: what to do when account name nor url is found?
         print("Account entry not found. Please try again")
         sys.exit(2)
-    retrieve_password(mpassword, rowindex)
+    retrieve_password(mpassword, rowindex+1)
 
 
 
@@ -168,6 +174,7 @@ def main():
     # check if the passwords file exists, it will exist if a master password has been established
     if not os.path.isfile('passwords.txt'): 
         create_master_password()
+        sys.exit(2)
 
     # master password exists:
     else:
@@ -189,14 +196,16 @@ def main():
             elif opt == '-d':
                 deleteFlag = True
 
+    # if user wants to delete password database:
     if deleteFlag:
-        decision = input("Are you sure you want to delete your password database? WARNING: This is permanent!\nEnter 1 to delete:\nEnter anything else to exit:")
+        decision = int(input("Are you sure you want to delete your password database? WARNING: This is permanent!\nEnter 1 to delete:\nEnter anything else to exit:"))
         if decision is 1:
-            decision2 = input("Are you sure you want to delete your password database? WARNING: This is permanent!\nEnter 9 to delete:\nEnter anything else to exit:")
-            if decision2 is 2:
+            decision2 = int(input("\nAre you sure you want to delete your password database? WARNING: This is permanent!\nEnter 9 to delete:\nEnter anything else to exit:"))
+            if decision2 is 9:
                 os.remove('accounts.txt')
                 os.remove('passwords.txt')
                 print("Password database deleted.")
+                sys.exit(2)
             else: 
                 print("Safely exited.")
                 sys.exit(2)
@@ -214,7 +223,11 @@ def main():
         sys.exit(2)
 
     while True:
-        action = int(input("What would you like to do? \n1 - print accounts \n2 - retrieve account password \n3 - add account\n4 - exit\n"))
+        try:
+            action = int(input("What would you like to do? \n1 - print accounts \n2 - retrieve account password \n3 - add account\n4 - exit\n"))
+        except ValueError:
+            print("\nPlease choose a valid option between 1, 2, 3, and 4.\n")
+            continue
 
         # print accounts
         if action is 1: 
@@ -250,7 +263,6 @@ def main():
 
         # invalid option
         else: 
-            print("Please choose a valid option between 1, 2, and 3")
-            sys.exit(2)
+            print("\nPlease choose a valid option between 1, 2, 3, and 4.\n")
 
 main()
