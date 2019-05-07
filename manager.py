@@ -55,9 +55,12 @@ def verify_password(password):
 def create_master_password():
     """ Logic to prompt users to create master password
     """ 
+    print("Welcome to secure password management!\nTo begin, please create a strong password - remember to use both uppercase and lowercase letters, numbers, and symbols.\n")
     mpassword = input("Please enter a strong password: ")
     while not password_strength(mpassword, 1):
         mpassword = input("Please enter a strong password: ")
+
+    print("Password created!\nWARNING: if this password is lost, the password cannot be retrieved and the password database will be lost.\n")
     # hash the pasword
     hash = hash_password(mpassword)
 
@@ -159,6 +162,8 @@ def search_entry(mpassword, account='', url=''):
         sys.exit(2)
     retrieve_password(mpassword, rowindex)
 
+
+
 def main():
     # check if the passwords file exists, it will exist if a master password has been established
     if not os.path.isfile('passwords.txt'): 
@@ -180,6 +185,7 @@ def main():
                 sys.exit()
             elif opt == '-p':
                 mpassword = arg
+        print("mpassword", mpassword)
     while True:
         action = int(input("What would you like to do? \n1 - print accounts \n2 - retrieve account password \n3 - add account\n4 - exit\n"))
 
@@ -210,19 +216,14 @@ def main():
                 print("Please enter either an account name or url, or both, to create a new account entry.\n")
             else:
                 add_entry(mpassword, account=account, url=url)
-                
+
+        # exit
         elif action is 4:
-            # exit
-            print("exit")
-            sys.exit(2)
-        else: 
-            # invalid option
-            print("Please choose a valid option between 1, 2, and 3")
             sys.exit(2)
 
-    # add_entry(mpassword, account='Facebook', url='www.facebook.com')
-    # add_entry(mpassword, account='Gmail', url='www.gmail.com')
-    # add_entry(mpassword, account='Twitter', url='www.twitter.com')
-    # search_entry(mpassword, account='Twitter')
+        # invalid option
+        else: 
+            print("Please choose a valid option between 1, 2, and 3")
+            sys.exit(2)
 
 main()
