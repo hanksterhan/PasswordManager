@@ -12,6 +12,7 @@ from Crypto.Random import get_random_bytes
 from Crypto.Util.strxor import strxor
 import pyperclip
 from base64 import b64encode, b64decode
+import getpass
 
 
 
@@ -179,9 +180,9 @@ def main():
     # master password exists:
     else:
         try:
-            opts, args = getopt.getopt(sys.argv[1:],'hdp:')
+            opts, args = getopt.getopt(sys.argv[1:],'hdp')
         except getopt.GetoptError:
-            print("Usage:  python3 manager.py -p <password> or\n\tpython3 manager.py -d to delete database of passwords\n\tpython3 manager.py to create a master password")
+            print("Usage:  python3 manager.py -p or\n\tpython3 manager.py -d to delete database of passwords\n\tpython3 manager.py to create a master password")
             sys.exit(2)
 
         mpassword = ''
@@ -189,10 +190,10 @@ def main():
 
         for opt, arg in opts:
             if opt == '-h':
-                print("Usage:  python3 manager.py -p <password> or\n\tpython3 manager.py -d to delete database of passwords\n\tpython3 manager.py to create a master password")
+                print("Usage:  python3 manager.py -p or\n\tpython3 manager.py -d to delete database of passwords\n\tpython3 manager.py to create a master password")
                 sys.exit()
             elif opt == '-p':
-                mpassword = arg
+                mpassword = getpass.getpass("Please enter master password: ")
             elif opt == '-d':
                 deleteFlag = True
 
@@ -213,14 +214,26 @@ def main():
             print("Safely exited.")
             sys.exit(2)
 
-    if mpassword == '':
-        print("Usage:  python3 manager.py -p <password> or\n\tpython3 manager.py -d to delete database of passwords\n\tpython3 manager.py to create a master password")
-        sys.exit(2)
-
     # Verify master password
-    if not verify_password(mpassword):
-        print("Password incorrect.")
-        sys.exit(2)
+    incorrect_counter = 0
+    while(incorrect_counter < 10):
+        if not verify_password(mpassword):
+            print("Password incorrect.\n")
+
+            mpassword = getpass.getpass("Please enter master password: ")
+
+            incorrect_counter += 1
+
+            # Too many failed attempts, delete password database. 
+            if incorrect_counter == 9:
+                os.remove('accounts.txt')
+                os.remove('passwords.txt')
+                print("Password database deleted.")
+                sys.exit(2)
+
+        if incorrect_counter > 5:
+            print("Nearing maximum password attempts, deleting password database in  {} attempts.".format(9-incorrect_counter))
+
 
     while True:
         try:

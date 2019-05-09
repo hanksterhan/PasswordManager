@@ -11,15 +11,16 @@ On startup, run the following command:
 
     python3 manager.py
 
-On subsequent runs, run the following command:
+On subsequent runs, run the following command and user will be prompted for master password:
 
-    python3 manager.py -p [masterpassword]
+    python3 manager.py -p
 
 To delete the password database, run the following command:
 
     python3 manager.py -d
 
 Caution - deleting the password database is irreversible and permanent. 
+        - There is a maximum allowance of 10 erroneous password attempts. After 10 attempts, the password database will be deleted. 
 
 ## Command Line Interface
 1. print accounts 
