@@ -181,6 +181,12 @@ def main():
     else:
         try:
             opts, args = getopt.getopt(sys.argv[1:],'hdp')
+
+            # no flags entered
+            if len(opts) is 0:
+                print("Usage:  python3 manager.py -p or\n\tpython3 manager.py -d to delete database of passwords\n\tpython3 manager.py to create a master password")
+                sys.exit(2)
+
         except getopt.GetoptError:
             print("Usage:  python3 manager.py -p or\n\tpython3 manager.py -d to delete database of passwords\n\tpython3 manager.py to create a master password")
             sys.exit(2)
@@ -194,6 +200,7 @@ def main():
                 sys.exit()
             elif opt == '-p':
                 mpassword = getpass.getpass("Please enter master password: ")
+                print()
             elif opt == '-d':
                 deleteFlag = True
 
@@ -221,6 +228,7 @@ def main():
             print("Password incorrect.\n")
 
             mpassword = getpass.getpass("Please enter master password: ")
+            print()
 
             incorrect_counter += 1
 
