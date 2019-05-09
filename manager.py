@@ -65,6 +65,9 @@ def create_master_password():
     # hash the pasword
     hash = hash_password(mpassword)
 
+    # delete the master password:
+    del mpassword
+
     # store the hash at the beginning of the dataframe
     passwords = pd.DataFrame({"password":[hash]})
 
@@ -88,15 +91,44 @@ def generate_password():
         pw = str().join(myrg.choice(alphabet) for _ in range(length))
     return(pw)
 
-def store_password(mpassword):
+def store_password():
     """ Generates a password key using 32 byte random salt and 500,000 rounds of stretching and encrypts the generated password
         Stores the password into the corresponding row in the dataframe
-        input: mpassword (str)
+        input: nothing
         output: nothing
     """
     salt = get_random_bytes(32)
+
+    # Prompt and verify mpassword
+    mpassword = getpass.getpass("Please enter master password: ")
+
+    incorrect_counter = 0
+    while(incorrect_counter < 10):
+        if not verify_password(mpassword):
+            print("Password incorrect.\n")
+
+            mpassword = getpass.getpass("Please enter master password: ")
+            print()
+
+            incorrect_counter += 1
+
+            # Too many failed attempts, delete password database. 
+            if incorrect_counter == 9:
+                os.remove('accounts.txt')
+                os.remove('passwords.txt')
+                print("Password database deleted.")
+                sys.exit(2)
+        else:
+            break
+
+        if incorrect_counter > 5:
+            print("Nearing maximum password attempts, deleting password database in  {} attempts.".format(9-incorrect_counter))
+
     pwdkey = PBKDF2(mpassword, salt, count=500000)
+
+    # delete master password from memory 
     del mpassword
+
     pw = generate_password().encode('utf-8')
     epw = strxor(pw, pwdkey)
 
@@ -108,10 +140,9 @@ def store_password(mpassword):
     newpwd = pd.DataFrame({"password":[b64encode(salt+epw)]})
     newpwd.to_csv('passwords.txt', mode='a', header=False)
 
-def retrieve_password(mpassword, row):
+def retrieve_password(row):
     """ Given the row that the salt|encrypted_password is on, decrypt it
         input: row (int) 0-based index that starts after the hashed master password
-                mpassword (str)
         output: nothing
     """
     # read in the encrypted password
@@ -119,8 +150,35 @@ def retrieve_password(mpassword, row):
     salt_epw = b64decode(salt_epw[2:-1])
     salt = salt_epw[:32]
     epw = salt_epw[32:]
+    
+    # Prompt and verify mpassword
+    mpassword = getpass.getpass("Please enter master password: ")
+
+    incorrect_counter = 0
+    while(incorrect_counter < 10):
+        if not verify_password(mpassword):
+            print("Password incorrect.\n")
+
+            mpassword = getpass.getpass("Please enter master password: ")
+            print()
+
+            incorrect_counter += 1
+
+            # Too many failed attempts, delete password database. 
+            if incorrect_counter == 9:
+                os.remove('accounts.txt')
+                os.remove('passwords.txt')
+                print("Password database deleted.")
+                sys.exit(2)
+        else:
+            break
+
+        if incorrect_counter > 5:
+            print("Nearing maximum password attempts, deleting password database in  {} attempts.".format(9-incorrect_counter))
 
     pwdkey = PBKDF2(mpassword, salt, count=500000)
+
+    # delete master password
     del mpassword
     
     pw = strxor(epw, pwdkey)
@@ -130,7 +188,7 @@ def retrieve_password(mpassword, row):
     print("\nPassword Copied to Clipboard! \n")
 
 
-def add_entry(mpassword, account='', url=''):
+def add_entry(account='', url=''):
     """ Given an account name or url, create an entry in the dataframes and copy the password to the clipboard
         input: mpassword (str)
                account (str) [optional] account name if applicable
@@ -142,11 +200,11 @@ def add_entry(mpassword, account='', url=''):
     metadata.to_csv('accounts.txt', mode='a', header=False)
 
     # add password to the password dataframe
-    store_password(mpassword)
+    store_password()
 
-def search_entry(mpassword, account='', url=''):
+def search_entry(account='', url=''):
     """ Given an account name or url, search the metadata dataframe to find the corresponding row entry 
-        input: mpassword (str)
+        input: 
                account (str) [optional] account name if applicable
                url (str) [optional] url of the account if applicable
         output: nothing
@@ -167,7 +225,7 @@ def search_entry(mpassword, account='', url=''):
     else:
         print("Account entry not found. Please try again")
         sys.exit(2)
-    retrieve_password(mpassword, rowindex+1)
+    retrieve_password(rowindex+1)
 
 
 
@@ -238,7 +296,9 @@ def main():
                 os.remove('passwords.txt')
                 print("Password database deleted.")
                 sys.exit(2)
-        else: 
+        else:
+            # delete master password from memory 
+            del mpassword 
             break
 
         if incorrect_counter > 5:
@@ -268,7 +328,7 @@ def main():
             if account == '' and url == '':
                 print("Please enter either an account name or url, or both, to search an account entry.\n")
             else:
-                search_entry(mpassword, account=account, url=url)
+                search_entry(account=account, url=url)
 
         # add account
         elif action is 3:
@@ -278,7 +338,7 @@ def main():
             if account == '' and url == '':
                 print("Please enter either an account name or url, or both, to create a new account entry.\n")
             else:
-                add_entry(mpassword, account=account, url=url)
+                add_entry(account=account, url=url)
 
         # exit
         elif action is 4:
