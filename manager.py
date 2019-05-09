@@ -57,9 +57,25 @@ def create_master_password():
     """ Logic to prompt users to create master password
     """ 
     print("Welcome to secure password management!\nTo begin, please create a strong password - remember to use both uppercase and lowercase letters, numbers, and symbols.\n")
-    mpassword = input("Please enter a strong password: ")
+
+    mpassword = getpass.getpass("Please enter a strong password: ")
     while not password_strength(mpassword, 1):
-        mpassword = input("Please enter a strong password: ")
+        mpassword = getpass.getpass("Please enter a strong password: ")
+
+    # confirm password
+    mpassword2 = getpass.getpass("\nPlease confirm password:")
+    
+    incorrect_counter = 0
+    while mpassword != mpassword2:
+        # Maximum attempts reached
+        if incorrect_counter is 4:  
+            print("Maximum attempts reached. Please restart and try again.")
+            sys.exit()
+
+        # If passwords don't match
+        print("\nPasswords don't match")
+        mpassword2 = getpass.getpass("Please confirm password:")
+        incorrect_counter += 1
 
     print("Password created!\nWARNING: if this password is lost, the password cannot be retrieved and the password database will be lost.\n")
     # hash the pasword
@@ -100,7 +116,7 @@ def store_password():
     salt = get_random_bytes(32)
 
     # Prompt and verify mpassword
-    mpassword = getpass.getpass("Please enter master password: ")
+    mpassword = getpass.getpass("\nPlease enter master password: ")
 
     incorrect_counter = 0
     while(incorrect_counter < 10):
@@ -152,7 +168,7 @@ def retrieve_password(row):
     epw = salt_epw[32:]
     
     # Prompt and verify mpassword
-    mpassword = getpass.getpass("Please enter master password: ")
+    mpassword = getpass.getpass("\nPlease enter master password: ")
 
     incorrect_counter = 0
     while(incorrect_counter < 10):
