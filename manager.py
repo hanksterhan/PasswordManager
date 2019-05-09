@@ -246,7 +246,7 @@ def search_entry(account='', url=''):
 
 
 
-def main():
+if __name__ == '__main__':
     try:
         opts, args = getopt.getopt(sys.argv[1:],'h')
     except getopt.GetoptError:
@@ -374,5 +374,3 @@ def main():
         # invalid option
         else: 
             print("\nPlease choose a valid option between 1, 2, 3, 4, and 5.\n")
-
-main()
