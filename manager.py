@@ -76,6 +76,7 @@ def create_master_password():
         print("\nPasswords don't match")
         mpassword2 = getpass.getpass("Please confirm password:")
         incorrect_counter += 1
+    print("Password matched!\n")
 
     print("Password created!\nWARNING: if this password is lost, the password cannot be retrieved and the password database will be lost.\n")
     # hash the pasword
@@ -246,56 +247,30 @@ def search_entry(account='', url=''):
 
 
 def main():
+    try:
+        opts, args = getopt.getopt(sys.argv[1:],'h')
+    except getopt.GetoptError:
+        print("Usage:  python3 manager.py")
+        sys.exit(2)
+
+    mpassword = ''
+
+    for opt, arg in opts:
+        if opt == '-h':
+            print("Usage:  python3 manager.py")
+            sys.exit(2)
+        else: 
+            print("Usage:  python3 manager.py")
+            sys.exit(2)
+    
     # check if the passwords file exists, it will exist if a master password has been established
     if not os.path.isfile('passwords.txt'): 
         create_master_password()
         sys.exit(2)
 
-    # master password exists:
-    else:
-        try:
-            opts, args = getopt.getopt(sys.argv[1:],'hdp')
+    # Prompt and verify master password
+    mpassword = getpass.getpass("Please enter master password: \n")
 
-            # no flags entered
-            if len(opts) is 0:
-                print("Usage:  python3 manager.py -p or\n\tpython3 manager.py -d to delete database of passwords\n\tpython3 manager.py to create a master password")
-                sys.exit(2)
-
-        except getopt.GetoptError:
-            print("Usage:  python3 manager.py -p or\n\tpython3 manager.py -d to delete database of passwords\n\tpython3 manager.py to create a master password")
-            sys.exit(2)
-
-        mpassword = ''
-        deleteFlag = False
-
-        for opt, arg in opts:
-            if opt == '-h':
-                print("Usage:  python3 manager.py -p or\n\tpython3 manager.py -d to delete database of passwords\n\tpython3 manager.py to create a master password")
-                sys.exit()
-            elif opt == '-p':
-                mpassword = getpass.getpass("Please enter master password: ")
-                print()
-            elif opt == '-d':
-                deleteFlag = True
-
-    # if user wants to delete password database:
-    if deleteFlag:
-        decision = int(input("Are you sure you want to delete your password database? WARNING: This is permanent!\nEnter 1 to delete:\nEnter anything else to exit:"))
-        if decision is 1:
-            decision2 = int(input("\nAre you sure you want to delete your password database? WARNING: This is permanent!\nEnter 9 to delete:\nEnter anything else to exit:"))
-            if decision2 is 9:
-                os.remove('accounts.txt')
-                os.remove('passwords.txt')
-                print("Password database deleted.")
-                sys.exit(2)
-            else: 
-                print("Safely exited.")
-                sys.exit(2)
-        else:
-            print("Safely exited.")
-            sys.exit(2)
-
-    # Verify master password
     incorrect_counter = 0
     while(incorrect_counter < 10):
         if not verify_password(mpassword):
@@ -320,12 +295,12 @@ def main():
         if incorrect_counter > 5:
             print("Nearing maximum password attempts, deleting password database in  {} attempts.".format(9-incorrect_counter))
 
-
+    # Main program with options
     while True:
         try:
-            action = int(input("What would you like to do? \n1 - print accounts \n2 - retrieve account password \n3 - add account\n4 - exit\n"))
+            action = int(input("What would you like to do? \n1 - print accounts \n2 - retrieve account password \n3 - add account\n4 - delete password database\n5 - exit\n"))
         except ValueError:
-            print("\nPlease choose a valid option between 1, 2, 3, and 4.\n")
+            print("\nPlease choose a valid option between 1, 2, 3, 4, and 5.\n")
             continue
 
         # print accounts
@@ -356,12 +331,26 @@ def main():
             else:
                 add_entry(account=account, url=url)
 
-        # exit
+        # delete database
         elif action is 4:
+            mpassword = getpass.getpass("\nAre you sure you want to delete your password database? WARNING: This is permanent!\nEnter master password to delete, enter anything else to exit:")
+
+            # verify master password
+            if not verify_password(mpassword):
+                print("Incorrect Password, safely exiting..")
+                sys.exit(2)
+            else:
+                os.remove('accounts.txt')
+                os.remove('passwords.txt')
+                print("Password database deleted.")
+                sys.exit(2)
+
+        # exit
+        elif action is 5:
             sys.exit(2)
 
         # invalid option
         else: 
-            print("\nPlease choose a valid option between 1, 2, 3, and 4.\n")
+            print("\nPlease choose a valid option between 1, 2, 3, 4, and 5.\n")
 
 main()
