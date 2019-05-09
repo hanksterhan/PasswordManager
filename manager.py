@@ -230,6 +230,8 @@ def main():
                 os.remove('passwords.txt')
                 print("Password database deleted.")
                 sys.exit(2)
+        else: 
+            break
 
         if incorrect_counter > 5:
             print("Nearing maximum password attempts, deleting password database in  {} attempts.".format(9-incorrect_counter))
