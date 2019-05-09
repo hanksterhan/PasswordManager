@@ -308,7 +308,6 @@ def main():
             metadata = pd.read_csv('accounts.txt', index_col=0).reset_index(drop=True)
             print()
             print(metadata)
-            del metadata
             print()
 
         # retrieve account password
@@ -333,17 +332,40 @@ def main():
 
         # delete database
         elif action is 4:
-            mpassword = getpass.getpass("\nAre you sure you want to delete your password database? WARNING: This is permanent!\nEnter master password to delete, enter anything else to exit:")
+            mpassword = getpass.getpass("\nAre you sure you want to delete your password database? WARNING: This is permanent!\nEnter master password to delete, enter 0 to exit")
+            
+            if mpassword == "0":
+                print()
+                continue
 
-            # verify master password
-            if not verify_password(mpassword):
-                print("Incorrect Password, safely exiting..")
-                sys.exit(2)
-            else:
-                os.remove('accounts.txt')
-                os.remove('passwords.txt')
-                print("Password database deleted.")
-                sys.exit(2)
+            incorrect_counter = 0
+            while(incorrect_counter < 10):
+                if not verify_password(mpassword):
+                    print("Password incorrect.\n")
+
+                    mpassword = getpass.getpass("Enter master password to delete password database, or enter 0 to exit: ")
+                    print()
+
+                    if mpassword == "0":
+                        print("Entered 0 - safely exiting..\n")
+                        break
+
+                    incorrect_counter += 1
+
+                    # Too many failed attempts, delete password database. 
+                    if incorrect_counter == 9:
+                        os.remove('accounts.txt')
+                        os.remove('passwords.txt')
+                        print("Password database deleted.")
+                        sys.exit(2)
+                else:
+                    os.remove('accounts.txt')
+                    os.remove('passwords.txt')
+                    print("Password database deleted.")
+                    sys.exit(2)
+
+                if incorrect_counter > 5:
+                    print("Nearing maximum password attempts, deleting password database in  {} attempts.".format(9-incorrect_counter))
 
         # exit
         elif action is 5:

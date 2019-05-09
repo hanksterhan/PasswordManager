@@ -7,20 +7,13 @@ Run the following command to install all the required packages, runs in python3
     pip3 install -r requriements.txt
 
 ## Usage
-On startup, run the following command:
+On startup and on subsequent runs, run the following command:
 
     python3 manager.py
 
-On subsequent runs, run the following command and user will be prompted for master password:
+On startup, you will be prompted to create a master password. On subsequent runs, you will simply be prompted to enter your master password.
 
-    python3 manager.py -p
-
-To delete the password database, run the following command:
-
-    python3 manager.py -d
-
-Caution - deleting the password database is irreversible and permanent. 
-        - There is a maximum allowance of 10 erroneous password attempts. After 10 attempts, the password database will be deleted. 
+Caution - There is a maximum allowance of 10 erroneous password attempts. After 10 attempts, the password database will be deleted. 
 
 ## Command Line Interface
 1. print accounts 
@@ -35,6 +28,11 @@ Caution - deleting the password database is irreversible and permanent.
 
     This option will prompt the user to add an account password based on an account name or url, or both. A strong, secure password will be generated, stored, and then copied to the user's clipboard.
 
-4. exit
+4. delete password database
+
+    This option will prompt the user for the master password in order to delete the password database.
+    Caution - deleting the password database is irreversible and permanent. 
+
+5. exit
 
     This option will exit the application.
